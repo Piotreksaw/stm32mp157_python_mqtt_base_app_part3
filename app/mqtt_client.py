@@ -6,11 +6,11 @@ import paho.mqtt.client as mqtt
 
 class MqttClient:
     def __init__(self):
-        self.client = mqtt.Client()
+        #self.client = mqtt.Client()
         #switch to (if you use it with paho 2.0>)
-        #self.client = mqtt.Client(
-        #    callback_api_version=mqtt.CallbackAPIVersion.VERSION1
-        #)
+        self.client = mqtt.Client(
+           callback_api_version=mqtt.CallbackAPIVersion.VERSION1
+        )
         self.connected = False
         self.last_error = None
         self._connect_event = threading.Event()
@@ -42,11 +42,18 @@ class MqttClient:
             self._connect_event.set()
 
         def on_message(client, userdata, msg):
-            self._append_log(
-                "received",
-                topic=msg.topic,
-                payload=msg.payload.decode(errors="ignore"),
-            )
+            payload = msg.payload.decode(errors="ignore").strip()
+            self._append_log("received", topic=msg.topic, payload=payload)
+
+            # === obsługa CPU temperature ===
+            if msg.topic == "device/cpu/temperature" and payload.lower() == "read":
+                temp = self.read_cpu_temperature()
+                if temp is not None:
+                    client.publish(msg.topic, f"{temp:.2f} °C")
+                    self._append_log("sent", topic=msg.topic, payload=f"{temp:.2f} °C")
+                else:
+                    client.publish(msg.topic, "Error reading CPU temp")
+                    self._append_log("sent", topic=msg.topic, payload="Error reading CPU temp")
 
         self.client.on_connect = on_connect
         self.client.on_message = on_message
@@ -95,3 +102,13 @@ class MqttClient:
         }
         with self._logs_lock:
             self._logs[direction].appendleft(entry)
+
+    # function to read cpu temperatures
+    def read_cpu_temperature(self):
+        try:
+            with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+                temp_millic = int(f.read().strip())
+            return temp_millic / 1000.0  # °C
+        except Exception as e:
+            self.last_error = str(e)
+            return None

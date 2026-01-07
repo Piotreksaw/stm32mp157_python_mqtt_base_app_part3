@@ -15,6 +15,11 @@
   const subscriptionList = document.querySelector('[data-subscription-list]');
   const logSentList = document.querySelector('[data-log-sent]');
   const logReceivedList = document.querySelector('[data-log-received]');
+
+  // reading temp
+  const tempRequestBtn = document.querySelector('[data-temp-request]');
+  const cpuTempInput = document.querySelector('[data-cpu-temp]');
+
   let isConnected = false;
   let periodicTimer = null;
   let periodicActive = false;
@@ -416,4 +421,23 @@
   renderSubscriptions();
   setSubscribeAvailability();
   loadLogs();
+
+  // read temps function
+  if (tempRequestBtn) {
+  tempRequestBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!isConnected) {
+      setStatus('error', 'Connect to the broker first');
+      return;
+    }
+
+    const topic = 'device/cpu/temperature';
+    const message = 'read';
+
+    const success = await sendPublish(topic, message);
+    if (success) {
+      setStatus('success', 'Temperature request sent');
+    }
+  });
+}
 });

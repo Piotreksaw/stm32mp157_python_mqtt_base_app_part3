@@ -46,6 +46,8 @@
             <p class="eyebrow">Publishing</p>
             <h2>Send message</h2>
           </div>
+
+
           <div class="mode-toggle" role="group" aria-label="Send mode">
             <label>
               <input type="radio" name="mode" value="once" checked />
@@ -130,6 +132,25 @@
           </div>
         </div>
       </article>
+
+        <article class="card">
+  <div class="card-head">
+    <div>
+      <p class="eyebrow">CPU Monitor</p>
+      <h2>Temperature</h2>
+    </div>
+  </div>
+  <label class="field">
+    <span>Current CPU temperature</span>
+    <div class="with-action">
+      <input type="text" placeholder="Not read yet" data-cpu-temp readonly />
+      <div class="actions">
+        <button class="btn primary" data-temp-request>Read Temp</button>
+      </div>
+    </div>
+  </label>
+  <div class="hint">Click the button to request the CPU temperature via MQTT.</div>
+</article>
     </section>
   </main>
 

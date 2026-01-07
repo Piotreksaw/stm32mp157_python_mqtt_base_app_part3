@@ -44,9 +44,18 @@ Lightweight web tool for testing MQTT brokers - Flask backend with a single-page
 2. Connect Power Supply (at least 15W) to USB-C port next to RJ45 port
 3. Then you have to connect Nucelo to your Wi-Fi. How to do it:
 4. In terminal run `su` command, then run `vi /etc/wpa_supplicant/wpa_supplicant.conf`, where you have to insert you internet name and password
-5. Next step is to run `wifi_connect.sh` or `wifi_connect.sh`.
+5. Next step is to run `wifi_connect.sh` or `wifi_disconnect.sh`.
 6. You can also just connect ethernet cable xd - it's much easier than Wi-Fi config
 7. Use command `ip addr show` to get the board IP
 8. Go to folder `cd home/pliki_usb/stm32mp157_python_mqtt_base_app-main/` and run `python3 main.py` -> This action starts up the server
 9. On other device open `http://<board-ip>:5000/` in browser, paste `mqtt://broker.hivemq.com:1883`
 10. click connect button. You are ready to go :)
+
+
+
+## Reading core temps in terminal
+To read temperatures you have to look inside `thermal` folder. To get there you have to run `cat /sys/class/thermal/thermal_zone0/temp` (it's the cpu temps ofc).
+There was implemented code in mqtt related files that should put request from mqtt studio to stm32 to send cpu temp. But unfortunately it doesn't work yet, good luck
+
+## For my further "czepialstwo" please add git to Yocto image next time, it would be really easier to run code
+
