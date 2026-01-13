@@ -436,7 +436,7 @@
 
     const success = await sendPublish(topic, message);
     if (success) {
-      setStatus('success', 'Temperature request sent');
+      setStatus('success', 'Status: Connected');
     }
   });
 }

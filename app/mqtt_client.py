@@ -39,21 +39,32 @@ class MqttClient:
         def on_connect(client, userdata, flags, rc):
             self.connected = rc == 0
             self.last_error = None if self.connected else mqtt.connack_string(rc)
+            if self.connected:
+                try:
+                    client.subscribe("device/cpu/temperature")
+                    self._subscriptions.add("device/cpu/temperature")
+                except Exception as e:
+                    self.last_error = f"Auto-subscribe failed: {str(e)}"
             self._connect_event.set()
 
         def on_message(client, userdata, msg):
             payload = msg.payload.decode(errors="ignore").strip()
             self._append_log("received", topic=msg.topic, payload=payload)
 
-            # === obsługa CPU temperature ===
             if msg.topic == "device/cpu/temperature" and payload.lower() == "read":
                 temp = self.read_cpu_temperature()
                 if temp is not None:
-                    client.publish(msg.topic, f"{temp:.2f} °C")
-                    self._append_log("sent", topic=msg.topic, payload=f"{temp:.2f} °C")
+                    result = client.publish(msg.topic, f"{temp:.2f} °C", qos=1)
+                    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                        self._append_log("sent", topic=msg.topic, payload=f"{temp:.2f} °C")
+                    else:
+                        self.last_error = f"Failed to publish temperature: {mqtt.error_string(result.rc)}"
                 else:
-                    client.publish(msg.topic, "Error reading CPU temp")
-                    self._append_log("sent", topic=msg.topic, payload="Error reading CPU temp")
+                    result = client.publish(msg.topic, "Error reading CPU temp", qos=1)
+                    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                        self._append_log("sent", topic=msg.topic, payload="Error reading CPU temp")
+                    else:
+                        self.last_error = f"Failed to publish error: {mqtt.error_string(result.rc)}"
 
         self.client.on_connect = on_connect
         self.client.on_message = on_message
@@ -103,7 +114,6 @@ class MqttClient:
         with self._logs_lock:
             self._logs[direction].appendleft(entry)
 
-    # function to read cpu temperatures
     def read_cpu_temperature(self):
         try:
             with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
