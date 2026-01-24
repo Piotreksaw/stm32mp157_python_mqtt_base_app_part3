@@ -47,9 +47,10 @@ Lightweight web tool for testing MQTT brokers - Flask backend with a single-page
 5. Next step is to run `wifi_connect.sh` or `wifi_disconnect.sh`.
 6. You can also just connect ethernet cable xd - it's much easier than Wi-Fi config
 7. Use command `ip addr show` to get the board IP
-8. Go to folder `cd home/pliki_usb/stm32mp157_python_mqtt_base_app-main/` and run `python3 main.py` -> This action starts up the server
+8. Go to folder `cd home/root/usb_files/stm32mp157_python_mqtt_base_app-main/` and run `python3 main.py` -> This action starts up the server
 9. On other device open `http://<board-ip>:5000/` in browser, paste `mqtt://broker.hivemq.com:1883`
-10. click connect button. You are ready to go :)
+10. Click connect button. You are ready to go :)
+11. For easier file editing, you can use WinSCP on the other device. 
 
 
 
