@@ -1,4 +1,6 @@
 ﻿import threading
+import platform
+import random
 from collections import deque
 from datetime import datetime
 from urllib.parse import urlparse
@@ -6,15 +8,20 @@ import paho.mqtt.client as mqtt
 
 class MqttClient:
     def __init__(self):
-        #self.client = mqtt.Client()
-        #switch to (if you use it with paho 2.0>)
-        self.client = mqtt.Client(
-           callback_api_version=mqtt.CallbackAPIVersion.VERSION1
-        )
+        # Paho MQTT 2.0.0 introduced CallbackAPIVersion.
+        # We detect if it exists to support both 1.x and 2.x versions.
+        if hasattr(mqtt, "CallbackAPIVersion"):
+            self.client = mqtt.Client(
+                callback_api_version=mqtt.CallbackAPIVersion.VERSION1
+            )
+        else:
+            self.client = mqtt.Client()
+
         self.connected = False
         self.last_error = None
         self._connect_event = threading.Event()
         self._subscriptions = set()
+        self._subscriptions_lock = threading.Lock()
         self._logs_lock = threading.Lock()
         self._logs = {
             "sent": deque(maxlen=200),
@@ -31,7 +38,8 @@ class MqttClient:
         self._connect_event.clear()
         self.connected = False
         self.last_error = None
-        self._subscriptions.clear()
+        with self._subscriptions_lock:
+            self._subscriptions.clear()
         with self._logs_lock:
             self._logs["sent"].clear()
             self._logs["received"].clear()
@@ -42,7 +50,8 @@ class MqttClient:
             if self.connected:
                 try:
                     client.subscribe("device/cpu/temperature")
-                    self._subscriptions.add("device/cpu/temperature")
+                    with self._subscriptions_lock:
+                        self._subscriptions.add("device/cpu/temperature")
                 except Exception as e:
                     self.last_error = f"Auto-subscribe failed: {str(e)}"
             self._connect_event.set()
@@ -92,11 +101,13 @@ class MqttClient:
         result, _ = self.client.subscribe(topic)
         if result != mqtt.MQTT_ERR_SUCCESS:
             raise RuntimeError(f"Subscribe failed ({result})")
-        self._subscriptions.add(topic)
-        return list(self._subscriptions)
+        with self._subscriptions_lock:
+            self._subscriptions.add(topic)
+            return list(self._subscriptions)
 
     def list_subscriptions(self):
-        return list(self._subscriptions)
+        with self._subscriptions_lock:
+            return list(self._subscriptions)
 
     def get_logs(self):
         with self._logs_lock:
@@ -109,16 +120,20 @@ class MqttClient:
         entry = {
             "topic": topic,
             "payload": payload,
-            "time": datetime.utcnow().isoformat() + "Z",
+            "time": datetime.now(datetime.timezone.utc).isoformat() + "Z",
         }
         with self._logs_lock:
             self._logs[direction].appendleft(entry)
 
     def read_cpu_temperature(self):
+        
         try:
-            with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
-                temp_millic = int(f.read().strip())
-            return temp_millic / 1000.0  # °C
+            if platform.system() == "Linux":
+                with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+                    temp_millic = int(f.read().strip())
+                return temp_millic / 1000.0  # °C
+            else: # Mock for Windows/macOS dev environments
+                return 35.0 + (random.random() * 10.0)
         except Exception as e:
             self.last_error = str(e)
             return None
