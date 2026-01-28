@@ -21,6 +21,19 @@ Lightweight web tool for testing MQTT brokers - Flask backend with a single-page
 - `app/mqtt_client.py` - `paho-mqtt` wrapper for connect/publish/subscribe and bounded logs.
 - `static/` - frontend assets: `index.html`, `style.css`, `app.js`.
 
+## Quick Start (Development/PC)
+
+1.  **Clone the repository** and navigate to the folder.
+2.  **Install dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+	You can edit it to change paho-mqtt version.
+3.  **Run the application**:
+    ```bash
+    python main.py
+    ```
+
 ## Using the app (after it is running)
 - Open `http://localhost:5000/` in your browser.
 - Enter the broker address (e.g., `mqtt://broker.hivemq.com:1883`) and click **Connect**.
@@ -58,5 +71,6 @@ Lightweight web tool for testing MQTT brokers - Flask backend with a single-page
 To read temperatures you have to look inside `thermal` folder. To get there you have to run `cat /sys/class/thermal/thermal_zone0/temp` (it's the cpu temps ofc).
 There was implemented code in mqtt related files that should put request from mqtt studio to stm32 to send cpu temp. But unfortunately it doesn't work yet, good luck
 
-## For my further "czepialstwo" please add git to Yocto image next time, it would be really easier to run code
+## Yocto
 
+[Yocto repo from Team 1](https://github.com/zheksandr/Embedded_Linux_Stock_Viewer)
